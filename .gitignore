@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.tgz
+.DS_Store
+.songloft-dev.json
+
+# 移植蓝本（含自身 .git，仅本地参考，不纳入本仓库）
+lxserver/
