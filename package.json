@@ -1,0 +1,17 @@
+{
+  "name": "lxmusic",
+  "version": "0.1.0",
+  "description": "Songloft 洛雪音源插件",
+  "private": true,
+  "scripts": {
+    "build": "songloft-plugin build",
+    "dev": "songloft-plugin dev",
+    "validate": "songloft-plugin validate",
+    "publish:release": "songloft-plugin publish"
+  },
+  "devDependencies": {
+    "@songloft/plugin-builder": "^2.12.3",
+    "@songloft/plugin-sdk": "^2.12.3",
+    "typescript": "^5.7.0"
+  }
+}

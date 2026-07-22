@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>洛雪音源</title>
+  <link rel="stylesheet" href="static/css/style.css" />
+</head>
+<body>
+  <header class="app-bar">
+    <h1>洛雪音源</h1>
+    <span class="sub" id="platformInfo"></span>
+  </header>
+
+  <div id="noSourceBanner" class="banner hidden">
+    未导入任何音源脚本：搜索/歌单可用，但歌曲<strong>无法播放</strong>。请到「音源管理」导入 lx-music 自定义源脚本。
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="search">搜索</button>
+    <button class="tab" data-tab="sources">音源管理</button>
+    <button class="tab" data-tab="about">关于</button>
+  </nav>
+
+  <!-- 搜索 -->
+  <section class="panel active" id="tab-search">
+    <div class="row">
+      <input id="kw" type="text" placeholder="搜索歌曲 / 歌手…" />
+      <button id="btnSearch" class="primary">搜索</button>
+    </div>
+    <div class="row toolbar hidden" id="searchToolbar">
+      <label><input type="checkbox" id="selAll" /> 全选</label>
+      <button id="btnImport" class="primary">导入选中到音乐库</button>
+      <span id="importMsg" class="msg"></span>
+    </div>
+    <div id="results" class="list"></div>
+  </section>
+
+  <!-- 音源管理 -->
+  <section class="panel" id="tab-sources">
+    <div class="row">
+      <label class="file-btn">
+        导入脚本 (.js / .zip)
+        <input id="fileInput" type="file" accept=".js,.zip" multiple hidden />
+      </label>
+      <input id="urlInput" type="text" placeholder="从 URL 导入脚本…" />
+      <button id="btnImportUrl">导入</button>
+    </div>
+    <div id="sourceMsg" class="msg"></div>
+    <div id="sourceList" class="list"></div>
+  </section>
+
+  <!-- 关于 -->
+  <section class="panel" id="tab-about">
+    <div class="about">
+      <p><strong>洛雪音源</strong> 接入 lx-music 生态第三方音源。</p>
+      <ul>
+        <li>内置 musicSdk 仅访问各平台公开搜索/歌词接口，提供元数据。</li>
+        <li>播放直链由用户导入的自定义源脚本在隔离沙箱内解析。</li>
+        <li>插件本身<strong>不附带任何音源</strong>。</li>
+      </ul>
+      <p class="disclaimer">免责声明：音源脚本与其数据均为第三方版权内容，仅供个人学习研究，禁止商用，用户须自行清除产生的版权数据。</p>
+    </div>
+  </section>
+
+  <script src="static/js/app.js"></script>
+</body>
+</html>
