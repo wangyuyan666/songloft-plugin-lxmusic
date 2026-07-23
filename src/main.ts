@@ -28,6 +28,26 @@ async function onInit(): Promise<void> {
   });
 
   songloft.log.info('lxmusic ready. platforms=' + facade.sources.map((s) => s.id).join(','));
+
+  registerToMiot();
+}
+
+function registerToMiot(): void {
+  let attempts = 0;
+  const tryRegister = async () => {
+    attempts++;
+    try {
+      if (!songloft.comm || typeof songloft.comm.call !== 'function') return;
+      await songloft.comm.call('miot', 'register-search-provider', {
+        name: '洛雪音源',
+        searchPath: '/api/search/topone',
+      });
+      songloft.log.info('registered as miot search provider');
+    } catch (e) {
+      if (attempts < 5) setTimeout(tryRegister, 3000);
+    }
+  };
+  setTimeout(tryRegister, 2000);
 }
 
 async function onDeinit(): Promise<void> {

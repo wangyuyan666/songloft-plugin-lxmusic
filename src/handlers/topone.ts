@@ -1,20 +1,24 @@
+import { jsonResponse } from '@songloft/plugin-sdk';
 import type { AppContext } from './context';
-import { ok, fail, parseBody } from './response';
+import { parseBody } from './response';
 import { aggregateSearch, pickBestMatch } from './search';
 import { dedupKey } from './helpers';
+import { intervalToSeconds } from '../musicSdk';
 
-/** POST /api/search/topone —— 搜索+匹配+解析 URL，返回最佳可播放项。 */
+/** POST /api/search/topone — miot topone spec compatible. */
 export async function searchTopOne(ctx: AppContext, req: HTTPRequest): Promise<HTTPResponse> {
   const body = parseBody(req);
-  const keyword: string = body.keyword || [body.title, body.artist].filter(Boolean).join(' ');
-  if (!keyword) return fail('missing keyword', 400);
+  const hint = body.hint as { title?: string; artist?: string; duration?: number } | undefined;
+  const keyword: string = body.keyword || [hint?.title || body.title, hint?.artist || body.artist].filter(Boolean).join(' ');
+  if (!keyword) return jsonResponse({ code: 400, msg: 'missing keyword', data: null }, 400);
   const quality: string = body.quality || '128k';
 
   const list = await aggregateSearch(ctx, keyword, 1, 20, body.platforms);
-  if (list.length === 0) return ok({ found: false });
+  if (list.length === 0) return jsonResponse({ code: -1, msg: 'no results', data: null });
 
-  // 从最佳匹配开始逐个尝试解析，直到拿到可播放 URL
-  const ordered = [pickBestMatch(list, body.title || keyword, body.artist || '')]
+  const matchTitle = hint?.title || body.title || keyword;
+  const matchArtist = hint?.artist || body.artist || '';
+  const ordered = [pickBestMatch(list, matchTitle, matchArtist)]
     .concat(list)
     .filter((x, i, a) => x && a.indexOf(x) === i) as typeof list;
 
@@ -22,18 +26,24 @@ export async function searchTopOne(ctx: AppContext, req: HTTPRequest): Promise<H
     try {
       const outcome = await ctx.runtimes.getMusicUrl(info.source, info, quality);
       if (outcome) {
-        return ok({
-          found: true,
-          url: outcome.result.url,
-          headers: outcome.result.headers,
-          dedup_key: dedupKey(info),
-          songInfo: info,
-          source_data: { platform: info.source, quality, songInfo: info },
+        return jsonResponse({
+          code: 0,
+          msg: 'ok',
+          data: {
+            title: info.name || '',
+            artist: info.singer || '',
+            album: info.albumName || '',
+            duration: intervalToSeconds(info.interval),
+            cover_url: info.img || undefined,
+            url: outcome.result.url,
+            dedup_key: dedupKey(info),
+            source_data: { platform: info.source, quality, songInfo: info },
+          },
         });
       }
     } catch {
-      // 尝试下一个
+      // try next
     }
   }
-  return ok({ found: false, reason: 'no playable url' });
+  return jsonResponse({ code: -1, msg: 'no playable url', data: null });
 }

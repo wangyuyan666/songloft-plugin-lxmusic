@@ -3,7 +3,7 @@
   "name": "洛雪音源",
   "version": "1.0.0-beta",
   "description": "接入洛雪音乐(lx-music)生态第三方音源：多平台搜索/歌单/排行榜元数据 + 自定义音源脚本解析播放直链。插件不附带任何音源。",
-  "author": "",
+  "author": "yuyan",
   "homepage": "",
   "license": "Apache-2.0",
   "entryPath": "lxmusic",
@@ -15,11 +15,12 @@
     "songs.write",
     "playlists.read",
     "playlists.write",
-    "jsenv"
+    "jsenv",
+    "inter-plugin"
   ],
   "icon": "icon.svg",
   "updateUrl": "",
   "download_url": "https://github.com/wangyuyan666/songloft-plugin-lxmusic/releases/download/v1.0.0-beta/lxmusic.jsplugin.zip",
-  "entryHash": "84d8c889f916632bf2cec3a63eb49a97ee08fc72e71b2acfa5325620afa8d888",
-  "zipHash": "7ea0ccfe9e6b4e99805fa6aeaeed79265413acbdf9f713bd73852c32e9e20fa7"
+  "entryHash": "8dd339403cf36ca0bd913d191c61b5677a40bd9f9c43d96a3a68cb4effeff384",
+  "zipHash": "9dc776762206ba08d2956c9a546e6a1e56b21163ec7aba81d0e5414fe4a8d9af"
 }
