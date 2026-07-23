@@ -89,7 +89,7 @@ jobs:
             "dist/${ZIP_NAME}" \
             --target "${GITHUB_SHA}" \
             --title "v${VERSION}" \
-            --notes "自动构建的洛雪音源插件 v${VERSION}"
+            --notes "Automated build of the lxmusic plugin v${VERSION}"
           DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP_NAME}"
           echo "download_url=${DOWNLOAD_URL}" >> $GITHUB_OUTPUT
 
