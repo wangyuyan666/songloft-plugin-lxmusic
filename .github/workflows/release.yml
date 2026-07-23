@@ -82,11 +82,6 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           ZIP_NAME="${{ steps.plugin_info.outputs.zip_name }}"
           TAG="v${VERSION}"
-          # semver 预发布号（含 '-'，如 1.0.0-beta）→ 标记为 prerelease，不占用 latest
-          PRERELEASE=""
-          case "${VERSION}" in
-            *-*) PRERELEASE="--prerelease" ;;
-          esac
           if gh release view "${TAG}" &>/dev/null; then
             gh release delete "${TAG}" --yes
           fi
@@ -94,8 +89,7 @@ jobs:
             "dist/${ZIP_NAME}" \
             --target "${GITHUB_SHA}" \
             --title "v${VERSION}" \
-            --notes "自动构建的洛雪音源插件 v${VERSION}" \
-            ${PRERELEASE}
+            --notes "自动构建的洛雪音源插件 v${VERSION}"
           DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP_NAME}"
           echo "download_url=${DOWNLOAD_URL}" >> $GITHUB_OUTPUT
 
