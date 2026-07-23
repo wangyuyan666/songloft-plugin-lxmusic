@@ -1,6 +1,6 @@
 {
   "name": "lxmusic",
-  "version": "0.1.0",
+  "version": "1.0.0-beta",
   "description": "Songloft 洛雪音源插件",
   "private": true,
   "scripts": {
