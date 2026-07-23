@@ -1,6 +1,9 @@
 name: Release Plugin
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -16,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -28,15 +33,18 @@ jobs:
       - name: Resolve version
         id: version
         run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            # tag 触发：版本取自 tag（去掉前缀 v）
+            VERSION="${GITHUB_REF_NAME#v}"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
             VERSION=$(date -u +'%Y.%m.%d.%H%M')
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Generated version: ${VERSION}"
+          echo "Resolved version: ${VERSION}"
 
-      - name: Update version in plugin.json / package.json
+      - name: Set version in plugin.json / package.json
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           node -e "
@@ -51,12 +59,20 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Extract plugin info
+      - name: Extract plugin info + hashes
         id: plugin_info
         run: |
           ENTRY_PATH=$(node -p "require('./plugin.json').entryPath")
+          ZIP_NAME="${ENTRY_PATH}.jsplugin.zip"
+          # 从构建产物 zip 内的 plugin.json 读取 builder 计算的 hash
+          ENTRY_HASH=$(unzip -p "dist/${ZIP_NAME}" plugin.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf-8')).entryHash")
+          ZIP_HASH=$(unzip -p "dist/${ZIP_NAME}" plugin.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf-8')).zipHash")
           echo "entryPath=${ENTRY_PATH}" >> $GITHUB_OUTPUT
-          echo "zip_name=${ENTRY_PATH}.jsplugin.zip" >> $GITHUB_OUTPUT
+          echo "zip_name=${ZIP_NAME}" >> $GITHUB_OUTPUT
+          echo "entry_hash=${ENTRY_HASH}" >> $GITHUB_OUTPUT
+          echo "zip_hash=${ZIP_HASH}" >> $GITHUB_OUTPUT
+          echo "entryHash=${ENTRY_HASH}"
+          echo "zipHash=${ZIP_HASH}"
 
       - name: Create GitHub Release
         id: create_release
@@ -67,31 +83,40 @@ jobs:
           ZIP_NAME="${{ steps.plugin_info.outputs.zip_name }}"
           TAG="v${VERSION}"
           if gh release view "${TAG}" &>/dev/null; then
-            gh release delete "${TAG}" --yes --cleanup-tag
+            gh release delete "${TAG}" --yes
           fi
           gh release create "${TAG}" \
             "dist/${ZIP_NAME}" \
+            --target "${GITHUB_SHA}" \
             --title "v${VERSION}" \
             --notes "自动构建的洛雪音源插件 v${VERSION}"
           DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP_NAME}"
           echo "download_url=${DOWNLOAD_URL}" >> $GITHUB_OUTPUT
 
-      - name: Commit version bump + download_url
+      - name: Commit version + hashes + download_url to main
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          DOWNLOAD_URL: ${{ steps.create_release.outputs.download_url }}
+          ENTRY_HASH: ${{ steps.plugin_info.outputs.entry_hash }}
+          ZIP_HASH: ${{ steps.plugin_info.outputs.zip_hash }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          DOWNLOAD_URL="${{ steps.create_release.outputs.download_url }}"
+          # 回写默认分支：dist/ 未被追踪，checkout 不影响构建产物
+          git fetch origin main
+          git checkout main
           node -e "
             const fs = require('fs');
             const p = JSON.parse(fs.readFileSync('plugin.json', 'utf-8'));
-            p.version = '${VERSION}';
-            p.download_url = '${DOWNLOAD_URL}';
+            p.version = process.env.VERSION;
+            p.download_url = process.env.DOWNLOAD_URL;
+            p.entryHash = process.env.ENTRY_HASH;
+            p.zipHash = process.env.ZIP_HASH;
             fs.writeFileSync('plugin.json', JSON.stringify(p, null, 2) + '\n');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
-            pkg.version = '${VERSION}';
+            pkg.version = process.env.VERSION;
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
           "
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add plugin.json package.json
-          git diff --staged --quiet || git commit -m "chore(release): bump to v${VERSION}"
-          git push
+          git diff --staged --quiet || git commit -m "chore(release): v${VERSION} [skip ci]"
+          git push origin main
