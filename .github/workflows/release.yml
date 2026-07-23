@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: '版本号（留空则自动使用日期版本 YYYY.MM.DD.HHmm）'
+        description: 'Version (leave empty to auto-generate a date version YYYY.MM.DD.HHmm)'
         required: false
         default: ''
 
@@ -34,7 +34,7 @@ jobs:
         id: version
         run: |
           if [ "${{ github.ref_type }}" = "tag" ]; then
-            # tag 触发：版本取自 tag（去掉前缀 v）
+            # tag trigger: version comes from the tag (strip leading v)
             VERSION="${GITHUB_REF_NAME#v}"
           elif [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
@@ -64,7 +64,7 @@ jobs:
         run: |
           ENTRY_PATH=$(node -p "require('./plugin.json').entryPath")
           ZIP_NAME="${ENTRY_PATH}.jsplugin.zip"
-          # 从构建产物 zip 内的 plugin.json 读取 builder 计算的 hash
+          # read builder-computed hashes from plugin.json inside the built zip
           ENTRY_HASH=$(unzip -p "dist/${ZIP_NAME}" plugin.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf-8')).entryHash")
           ZIP_HASH=$(unzip -p "dist/${ZIP_NAME}" plugin.json | node -p "JSON.parse(require('fs').readFileSync(0,'utf-8')).zipHash")
           echo "entryPath=${ENTRY_PATH}" >> $GITHUB_OUTPUT
@@ -100,7 +100,7 @@ jobs:
           ENTRY_HASH: ${{ steps.plugin_info.outputs.entry_hash }}
           ZIP_HASH: ${{ steps.plugin_info.outputs.zip_hash }}
         run: |
-          # 回写默认分支：dist/ 未被追踪，checkout 不影响构建产物
+          # write back to the default branch: dist/ is untracked, so checkout keeps the build artifacts
           git fetch origin main
           git checkout main
           node -e "
